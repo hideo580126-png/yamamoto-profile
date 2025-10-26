@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="ja" class="scroll-smooth">
+<head>
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>インタラクティブ・キン肉バスター解説</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Stone & Red Accent -->
+    <!-- Application Structure Plan: ナビゲーションバーを画面上部に固定した、単一の縦スクロール型SPAを設計。ナビゲーション（「概要」「プロセス」「威力と実績」「弱点」「派生技」「まとめ」）により、ユーザーはページ全体をスクロールして物語を追うことも、特定のセクションに即座にジャンプすることも可能。この構造は、ダッシュボード型よりも物語性のある本レポートに適している。主要なインタラクションとして、技のプロセス（スライド2）を視覚的に理解するためのクリック可能なステップバイステップ・ダイアグラム、および派生技（スライド5）を比較・表示するためのタブ切り替え機能を実装。これにより、静的なテキストよりも高いエンゲージメントを目指す。 -->
+    <!-- Visualization & Content Choices:
+        - レポート情報: 「キン肉バスターとは？」 (スライド1) -> ゴール: 情報提供 -> 手法: ヒーローセクション (HTML/Tailwind) -> インタラクション: なし。 理由: 強力で明確な導入。
+        - レポート情報: 「技のプロセス」 (スライド2) -> ゴール: 整理/情報提供 -> 手法: カスタム・インタラクティブ・ダイアグラム (HTML/CSS/JS) -> インタラクション: ステップをクリックすると詳細な説明が表示される。 理由: 静的なリストよりも魅力的で理解しやすい。
+        - レポート情報: 「破壊力と実績」 (スライド3) -> ゴール: 情報提供 -> 手法: スタイル付き情報カードとリスト (HTML/Tailwind) -> インタラクション: ホバーエフェクト。 理由: テキストを分割し、キーポイントを強調。
+        - レポート情報: 「弱点と対策」 (スライド4) -> ゴール: 比較 -> 手法: 2カラムレイアウト (HTML/Tailwind) -> インタラクション: なし。 理由: 明確な並列比較。
+        - レポート情報: 「派生技と関連技」 (スライド5) -> ゴール: 比較/情報提供 -> 手法: JSボタンによるタブ型コンテンツ (HTML/JS) -> インタラクション: ボタンクリックで説明をトグル。 理由: 省スペースで直接比較が可能。
+        - レポート情報: 「まとめ」 (スライド6) -> ゴール: 情報提供 -> 手法: 結論テキストブロック (HTML/Tailwind) -> インタラクション: なし。 理由: 明確な結論。
+        - **Chart.js/Plotly.jsは不使用**: ソースレポートはチャート化に適した定量的データを含まず、質的な説明テキストのみで構成されているため。代わりに、インタラクティブなHTML/JS要素（ダイアグラム、タブ）を使用する。 -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        .process-step {
+            transition: all 0.3s ease;
+        }
+        .process-step.active {
+            transform: scale(1.05);
+            box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+        }
+        .process-step-content {
+            display: none;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.5s ease-out;
+        }
+        .process-step.active .process-step-content {
+            display: block;
+            max-height: 500px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        .tab-btn.active {
+            background-color: #DC2626;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans leading-relaxed">
+
+    <header class="bg-stone-900 text-white p-4 shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto flex flex-wrap justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-red-500">キン肉バスター徹底解説</h1>
+            <div class="space-x-2 md:space-x-4 text-sm md:text-base">
+                <a href="#overview" class="hover:text-red-400 transition-colors">概要</a>
+                <a href="#process" class="hover:text-red-400 transition-colors">プロセス</a>
+                <a href="#impact" class="hover:text-red-400 transition-colors">威力と実績</a>
+                <a href="#weakness" class="hover:text-red-400 transition-colors">弱点</a>
+                <a href="#evolution" class="hover:text-red-400 transition-colors">派生技</a>
+                <a href="#summary" class="hover:text-red-400 transition-colors">まとめ</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section id="overview" class="pt-16 -mt-16 mb-16 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold text-stone-900 mb-4">キン肉バスターとは？</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto mb-8">
+                このセクションでは、キン肉バスターの基本的な定義を紹介します。漫画『キン肉マン』におけるこの技の位置づけ、別名、そしてその破壊的な特徴について概説し、なぜこの技が主人公の代名詞となったのかを理解する土台を築きます。
+            </p>
+            <div class="mb-12">
+                <img src="https://placehold.co/600x400/ef4444/ffffff?text=キン肉バスター+(イメージ図)" alt="キン肉バスターのイメージ図" class="w-full max-w-2xl mx-auto rounded-lg shadow-lg object-cover" onerror="this.src='https://placehold.co/600x400/ef4444/ffffff?text=イメージ読込エラー'">
+            </div>
+            <div class="bg-white p-8 rounded-lg shadow-lg border border-stone-200 max-w-4xl mx-auto">
+                <p class="text-xl md:text-2xl font-semibold mb-6">漫画『キン肉マン』の主人公、キン肉スグル（キン肉マン）の代表的な必殺技（フェイバリット・ホールド）。</p>
+                <div class="grid md:grid-cols-2 gap-6 text-left">
+                    <div>
+                        <h3 class="text-xl font-bold text-red-600 mb-2">別名</h3>
+                        <p class="text-stone-700">当初は「48の殺人技」の一つとされていた（後にハッタリと判明するが、威力は本物）。</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xl font-bold text-red-600 mb-2">特徴</h3>
+                        <p class="text-stone-700">相手を逆さまに持ち上げ、ジャンプして着地することで相手の首や背骨を破壊する、シンプルかつ強力無比な技。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="process" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">技のプロセス</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto mb-10 text-center">
+                ここでは、キン肉バスターがどのように繰り出されるのか、その一連の流れを4つのステップに分けてインタラクティブに解説します。各ステップをクリックすることで、その動作の詳細が表示されます。技のメカニズムを視覚的に探求してください。
+            </p>
+            <div id="process-diagram" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <div class="process-step bg-white p-6 rounded-lg shadow-lg border border-stone-200 cursor-pointer" data-step="1">
+                    <h3 class="text-2xl font-bold text-red-600 mb-3">1. 捕捉</h3>
+                    <p class="font-semibold text-stone-800">相手の懐に飛び込み、相手の両脚を掴む。</p>
+                    <img src="https://placehold.co/300x200/f5f5f4/3b82f6?text=ステップ1:+捕捉" alt="捕捉のイメージ" class="my-4 rounded-md shadow-sm w-full object-cover" onerror="this.src='https://placehold.co/300x200/f5f5f4/3b82f6?text=イメージ読込エラー'">
+                    <div class="process-step-content mt-4 text-stone-700">
+                        <p>技の始動。素早く相手との間合いを詰め、両脚を確実にキャッチすることが成功の鍵となります。</p>
+                    </div>
+                </div>
+                <div class="process-step bg-white p-6 rounded-lg shadow-lg border border-stone-200 cursor-pointer" data-step="2">
+                    <h3 class="text-2xl font-bold text-red-600 mb-3">2. 固定 (ロック)</h3>
+                    <p class="font-semibold text-stone-800">掴んだ両脚を、自分の両肩の上に乗せ、相手の上半身が逆さまになるように固定する。</p>
+                    <img src="https://placehold.co/300x200/f5f5f4/3b82f6?text=ステップ2:+固定+(ロック)" alt="固定のイメージ" class="my-4 rounded-md shadow-sm w-full object-cover" onerror="this.src='https://placehold.co/300x200/f5f5f4/3b82f6?text=イメージ読込エラー'">
+                    <div class="process-step-content mt-4 text-stone-700">
+                        <p>この時点で相手は逆さ吊りの状態となり、身動きがほぼ取れなくなります。確実な固定がダメージを最大化します。</p>
+                    </div>
+                </div>
+                <div class="process-step bg-white p-6 rounded-lg shadow-lg border border-stone-200 cursor-pointer" data-step="3">
+                    <h3 class="text-2xl font-bold text-red-600 mb-3">3. 飛翔</h3>
+                    <p class="font-semibold text-stone-800">相手を抱えたまま、リング中央で高くジャンプする。</p>
+                    <img src="https://placehold.co/300x200/f5f5f4/3b82f6?text=ステップ3:+飛翔" alt="飛翔のイメージ" class="my-4 rounded-md shadow-sm w-full object-cover" onerror="this.src='https://placehold.co/300x200/f5f5f4/3b82f6?text=イメージ読込エラー'">
+                    <div class="process-step-content mt-4 text-stone-700">
+                        <p>「火事場のクソ力」により、驚異的な跳躍を見せます。この高さが、そのまま破壊力へと直結します。</p>
+                    </div>
+                </div>
+                <div class="process-step bg-white p-6 rounded-lg shadow-lg border border-stone-200 cursor-pointer" data-step="4">
+                    <h3 class="text-2xl font-bold text-red-600 mb-3">4. 激突</h3>
+                    <p class="font-semibold text-stone-800">全体重を乗せ、相手の首、肩、背骨をマットに叩きつける。</p>
+                    <img src="https://placehold.co/300x200/f5f5f4/3b82f6?text=ステップ4:+激突" alt="激突のイメージ" class="my-4 rounded-md shadow-sm w-full object-cover" onerror="this.src='https://placehold.co/300x200/f5f5f4/3b82f6?text=イメージ読込エラー'">
+                    <div class="process-step-content mt-4 text-stone-700">
+                        <p>技の終着点。ジャンプの落差と自身の体重全てを利用し、相手の中枢神経に壊滅的なダメージを与えます。</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section id="impact" class="pt-16 -mt-16 mb-16 bg-stone-100 p-8 rounded-lg shadow-inner">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">破壊力と実績</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto mb-10 text-center">
+                キン肉バスターがどれほど強力な技であるか、その「威力」と「実績」という二つの側面から探ります。この技が戦局に与えた影響と、伝説的な勝利の数々をご覧ください。
+            </p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">威力</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>着地の衝撃が相手の上半身（特に首と背骨）に集中。</li>
+                        <li>一度決まれば、ほとんどの超人が戦闘不能に陥る。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">主な実績</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-700">
+                        <li>ウォーズマン、バッファローマン（1戦目）、アシュラマン、ネプチューンマンなど、数々の強豪超人をこの技で撃破。</li>
+                        <li>キン肉マンの勝利の方程式において、欠かせないフィニッシュ・ホールド。</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <section id="weakness" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">弱点と対策</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto mb-10 text-center">
+                無敵に見えるキン肉バスターにも、弱点が存在しました。このセクションでは、ライバルたちによって編み出された「キン肉バスター破り」の数々と、それに対してキン肉マンがどのように技を進化させていったかを紹介します。
+            </p>
+            <div class="grid md:grid-cols-2 gap-8">
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">主な「キン肉バスター破り」</h3>
+                    <ul class="list-disc list-inside space-y-3 text-stone-700">
+                        <li><strong>悪魔将軍:</strong> 地獄の断頭台（の原型）でカウンター。</li>
+                        <li><strong>バッファローマン（2戦目）:</strong> 驚異的なパワーで体勢を逆転（キン肉バスター返し）。</li>
+                        <li><strong>ザ・マン（完璧・壱式）:</strong> 圧倒的な実力差による切り返し。</li>
+                    </ul>
+                </div>
+                <div class="bg-white p-6 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">対策と進化</h3>
+                    <p class="text-stone-700 text-lg">
+                        完璧な技ではないと知ったキン肉マンは、これらの敗北や苦戦の経験を経て、技に改良を加えていきます。その結果が、後の「ネオ・キン肉バスター」や「マッスル・スパーク」へと繋がっていくのです。
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section id="evolution" class="pt-16 -mt-16 mb-16">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-stone-900 mb-4">派生技と関連技</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto mb-10 text-center">
+                キン肉バスターは、戦いの中で進化を遂げました。ここでは、その代表的な派生技である「ネオ・キン肉バスター」と、究極の奥義である「マッスル・スパーク」を紹介します。下のボタンをクリックして、それぞれの技の詳細を切り替えてご覧ください。
+            </p>
+            <div class="text-center mb-6 space-x-4">
+                <button class="tab-btn active bg-stone-200 text-stone-800 font-semibold py-2 px-6 rounded-full transition-all" data-tab="neo">ネオ・キン肉バスター</button>
+                <button class="tab-btn bg-stone-200 text-stone-800 font-semibold py-2 px-6 rounded-full transition-all" data-tab="spark">マッスル・スパーク</button>
+            </div>
+            <div class="max-w-3xl mx-auto">
+                <div id="tab-neo" class="tab-content active bg-white p-8 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">ネオ・キン肉バスター</h3>
+                    <img src="https://placehold.co/500x300/f5f5f4/ef4444?text=ネオ・キン肉バスター+(イメージ図)" alt="ネオ・キン肉バスターのイメージ" class="my-4 rounded-lg shadow-md w-full object-cover" onerror="this.src='https://placehold.co/500x300/f5f5f4/ef4444?text=イメージ読込エラー'">
+                    <p class="text-stone-700 text-lg">従来のキン肉バスターの改良版。弱点であった両腕の自由を奪うため、相手の腕も固定するなど、より脱出困難な形に進化しています。これにより、多くの「キン肉バスター破り」を封じ込めることに成功しました。</p>
+                </div>
+                <div id="tab-spark" class="tab-content bg-white p-8 rounded-lg shadow-lg border border-stone-200">
+                    <h3 class="text-2xl font-bold text-red-600 mb-4">マッスル・スパーク</h3>
+                    <img src="https://placehold.co/500x300/f5f5f4/ef4444?text=マッスル・スパーク+(イメージ図)" alt="マッスル・スパークのイメージ" class="my-4 rounded-lg shadow-md w-full object-cover" onerror="this.src='https://placehold.co/500x300/f5f5f4/ef4444?text=イメージ読込エラー'">
+                    <p class="text-stone-700 text-lg">キン肉族三大奥義の一つ。キン肉バスターの発展形とも言える、より複雑で強力な究極技。相手をキャンバスに叩きつけるだけでなく、同時に複数の関節を極めるという、まさに神の領域の技です。</p>
+                </div>
+            </div>
+        </section>
+
+        <section id="summary" class="pt-16 -mt-16 mb-8 bg-stone-900 text-white p-10 rounded-lg shadow-2xl">
+            <h2 class="text-3xl md:text-4xl font-bold text-center text-red-500 mb-6">まとめ：「王の技」</h2>
+            <p class="text-lg text-stone-200 max-w-3xl mx-auto mb-6 text-center">
+                最後に、キン肉バスターという技の本質を総括します。この技が単なる必殺技を超え、何を象徴しているのかを解説します。
+            </p>
+            <ul class="list-none space-y-4 text-center text-xl max-w-2xl mx-auto">
+                <li class="bg-stone-800 p-4 rounded-md shadow-lg">
+                    キン肉マンの<strong>「火事場のクソ力」</strong>と<strong>「友情パワー」</strong>を象徴する必殺技。
+                </li>
+                <li class="bg-stone-800 p-4 rounded-md shadow-lg">
+                    シンプルな見た目とは裏腹に、相手の体を確実に破壊する機能美を持つ。
+                </li>
+                <li class="bg-stone-800 p-4 rounded-md shadow-lg">
+                    『キン肉マン』の歴史において、最も多くの激闘に終止符を打ってきた、まさに<strong>「王の技」</strong>である。
+                </li>
+            </ul>
+        </section>
+
+    </main>
+
+    <footer class="text-center p-6 bg-stone-200 text-stone-600 border-t border-stone-300">
+        <p>インタラクティブ・キン肉バスター解説</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const processSteps = document.querySelectorAll('.process-step');
+            processSteps.forEach(step => {
+                step.addEventListener('click', () => {
+                    const wasActive = step.classList.contains('active');
+                    processSteps.forEach(s => s.classList.remove('active'));
+                    if (!wasActive) {
+                        step.classList.add('active');
+                    }
+                });
+            });
+
+            const tabButtons = document.querySelectorAll('.tab-btn');
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabButtons.forEach(button => {
+                button.addEventListener('click', () => {
+                    const targetTab = button.getAttribute('data-tab');
+
+                    tabButtons.forEach(btn => btn.classList.remove('active'));
+                    button.classList.add('active');
+
+                    tabContents.forEach(content => {
+                        if (content.id === `tab-${targetTab}`) {
+                            content.classList.add('active');
+                        } else {
+                            content.classList.remove('active');
+                        }
+                    });
+                });
+            });
+
+            const navLinks = document.querySelectorAll('header nav a');
+            navLinks.forEach(link => {
+                link.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = link.getAttribute('href');
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
+
+
+
