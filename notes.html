@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ja" class="scroll-smooth">
+<head>
+<meta name="robots" content="noindex,nofollow,noarchive">
+<meta name="referrer" content="no-referrer">
+
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plaudノート</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chosen Palette: Warm Stone & Red Accent（index.html と統一） -->
+    <!-- このページは data/plaud-notes.json を fetch() で読み込み、
+         Plaud（AIボイスレコーダー）で録音・要約したノートをカード形式で自動表示します。
+         将来的には Zapier などが plaud-notes.json を自動更新する運用を想定しています。
+         詳細は PLAUD_INTEGRATION.md を参照。 -->
+    <style>
+        .note-transcript {
+            display: none;
+        }
+        .note-transcript.open {
+            display: block;
+        }
+    </style>
+</head>
+<body class="bg-stone-50 text-stone-800 font-sans leading-relaxed">
+
+    <header class="bg-stone-900 text-white p-4 shadow-md sticky top-0 z-50">
+        <nav class="container mx-auto flex flex-wrap justify-between items-center">
+            <h1 class="text-xl md:text-2xl font-bold text-red-500">Plaudノート</h1>
+            <div class="space-x-2 md:space-x-4 text-sm md:text-base">
+                <a href="index.html" class="hover:text-red-400 transition-colors">← ホーム</a>
+                <a href="#notes" class="hover:text-red-400 transition-colors">ノート一覧</a>
+            </div>
+        </nav>
+    </header>
+
+    <main class="container mx-auto p-4 md:p-8">
+
+        <section class="pt-12 -mt-12 mb-12 text-center">
+            <h2 class="text-4xl md:text-5xl font-bold text-stone-900 mb-4">🎙️ Plaudノート</h2>
+            <p class="text-lg text-stone-700 max-w-3xl mx-auto">
+                Plaud（AIボイスレコーダー）で録音・文字起こし・要約したノートを、このページに一覧表示します。
+                各カードの「文字起こしを表示」をクリックすると全文が開きます。
+            </p>
+        </section>
+
+        <section id="notes" class="pt-4 mb-16">
+            <!-- タグフィルター -->
+            <div id="tag-filter" class="flex flex-wrap justify-center gap-2 mb-8"></div>
+
+            <!-- 読み込み中／エラー表示 -->
+            <div id="status" class="text-center text-stone-500 py-10">ノートを読み込み中…</div>
+
+            <!-- ノートカードの描画先 -->
+            <div id="note-list" class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-5xl mx-auto"></div>
+        </section>
+
+    </main>
+
+    <footer class="text-center p-6 bg-stone-200 text-stone-600 border-t border-stone-300">
+        <p>Plaudノート — data/plaud-notes.json を編集すると内容が更新されます</p>
+    </footer>
+
+    <script>
+        // ---- 設定 ----------------------------------------------------------
+        const DATA_URL = 'data/plaud-notes.json';
+
+        // ---- 状態 ----------------------------------------------------------
+        let allNotes = [];
+        let activeTag = null;
+
+        // ---- ユーティリティ ------------------------------------------------
+        // XSS 対策：外部（Plaud/Zapier）由来の文字列は必ずエスケープして描画する
+        function escapeHtml(str) {
+            return String(str ?? '')
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatDate(iso) {
+            const d = new Date(iso);
+            if (isNaN(d)) return escapeHtml(iso);
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+            const p = (n) => String(n).padStart(2, '0');
+            return `${d.getFullYear()}/${p(d.getMonth() + 1)}/${p(d.getDate())}（${days[d.getDay()]}） ${p(d.getHours())}:${p(d.getMinutes())}`;
+        }
+
+        // ---- 描画 ----------------------------------------------------------
+        function renderTags() {
+            const tags = [...new Set(allNotes.flatMap(n => n.tags || []))];
+            const container = document.getElementById('tag-filter');
+            const makeBtn = (label, tag) => {
+                const isActive = activeTag === tag;
+                return `<button data-tag="${escapeHtml(tag ?? '')}"
+                    class="tag-btn py-1.5 px-4 rounded-full text-sm font-semibold transition-all border
+                    ${isActive ? 'bg-red-600 text-white border-red-600' : 'bg-white text-stone-700 border-stone-300 hover:border-red-400'}">
+                    ${escapeHtml(label)}</button>`;
+            };
+            container.innerHTML =
+                makeBtn('すべて', null) +
+                tags.map(t => makeBtn(t, t)).join('');
+
+            container.querySelectorAll('.tag-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const t = btn.getAttribute('data-tag');
+                    activeTag = (t === '' ? null : t);
+                    renderTags();
+                    renderNotes();
+                });
+            });
+        }
+
+        function noteCard(note) {
+            const tags = (note.tags || [])
+                .map(t => `<span class="inline-block bg-stone-100 text-stone-600 text-xs font-semibold px-2 py-1 rounded-full">${escapeHtml(t)}</span>`)
+                .join(' ');
+
+            const highlights = (note.highlights || []).length
+                ? `<ul class="list-disc list-inside space-y-1 text-stone-700 mt-3">
+                     ${note.highlights.map(h => `<li>${escapeHtml(h)}</li>`).join('')}
+                   </ul>`
+                : '';
+
+            const actions = (note.actionItems || []).length
+                ? `<div class="mt-4">
+                     <h4 class="text-sm font-bold text-red-600 mb-2">アクション項目</h4>
+                     <ul class="space-y-1">
+                       ${note.actionItems.map(a => `
+                         <li class="flex items-start gap-2 text-stone-700">
+                           <span>${a.done ? '✅' : '⬜️'}</span>
+                           <span>${escapeHtml(a.task)}${a.owner ? ` <span class="text-stone-400">（${escapeHtml(a.owner)}）</span>` : ''}</span>
+                         </li>`).join('')}
+                     </ul>
+                   </div>`
+                : '';
+
+            const transcript = note.transcript
+                ? `<div class="mt-4">
+                     <button class="transcript-toggle text-sm font-semibold text-red-600 hover:underline" data-id="${escapeHtml(note.id)}">
+                       ▼ 文字起こしを表示
+                     </button>
+                     <div class="note-transcript mt-3 p-4 bg-stone-100 rounded-md text-stone-700 text-sm whitespace-pre-wrap" data-id="${escapeHtml(note.id)}">${escapeHtml(note.transcript)}</div>
+                   </div>`
+                : '';
+
+            return `
+            <article class="bg-white p-6 rounded-lg shadow-lg border border-stone-200 flex flex-col">
+                <div class="flex items-start justify-between gap-3 mb-2">
+                    <h3 class="text-xl font-bold text-stone-900">${escapeHtml(note.title)}</h3>
+                </div>
+                <div class="flex flex-wrap items-center gap-2 text-xs text-stone-500 mb-3">
+                    <span>🕑 ${formatDate(note.date)}</span>
+                    ${note.duration ? `<span>・${escapeHtml(note.duration)}</span>` : ''}
+                </div>
+                <div class="mb-2 space-x-1">${tags}</div>
+                <p class="text-stone-800 font-medium">${escapeHtml(note.summary)}</p>
+                ${highlights}
+                ${actions}
+                ${transcript}
+            </article>`;
+        }
+
+        function renderNotes() {
+            const list = document.getElementById('note-list');
+            const filtered = activeTag
+                ? allNotes.filter(n => (n.tags || []).includes(activeTag))
+                : allNotes;
+
+            if (!filtered.length) {
+                list.innerHTML = `<p class="col-span-full text-center text-stone-500 py-10">該当するノートがありません。</p>`;
+                return;
+            }
+
+            list.innerHTML = filtered.map(noteCard).join('');
+
+            list.querySelectorAll('.transcript-toggle').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const id = btn.getAttribute('data-id');
+                    const panel = list.querySelector(`.note-transcript[data-id="${CSS.escape(id)}"]`);
+                    const open = panel.classList.toggle('open');
+                    btn.textContent = open ? '▲ 文字起こしを隠す' : '▼ 文字起こしを表示';
+                });
+            });
+        }
+
+        // ---- 読み込み ------------------------------------------------------
+        async function load() {
+            const status = document.getElementById('status');
+            try {
+                const res = await fetch(DATA_URL, { cache: 'no-store' });
+                if (!res.ok) throw new Error(`HTTP ${res.status}`);
+                const data = await res.json();
+                allNotes = Array.isArray(data.notes) ? data.notes : [];
+
+                // 新しい順に並べ替え
+                allNotes.sort((a, b) => new Date(b.date) - new Date(a.date));
+
+                status.style.display = 'none';
+                renderTags();
+                renderNotes();
+            } catch (err) {
+                status.innerHTML = `
+                    <p class="text-red-600 font-semibold">ノートを読み込めませんでした（${escapeHtml(err.message)}）</p>
+                    <p class="text-stone-500 text-sm mt-2">
+                        ローカルの file:// で開いた場合は fetch がブロックされます。
+                        GitHub Pages 上、またはローカルサーバー（例: <code>python3 -m http.server</code>）で開いてください。
+                    </p>`;
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', load);
+    </script>
+
+</body>
+</html>
